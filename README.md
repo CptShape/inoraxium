@@ -13,6 +13,8 @@ npm run build
 npm run firebase:sync
 ```
 
+Servis hesabı JSON dosyan yoksa mevcut `firebase login` oturumuyla aktarım için `npm run firebase:sync:login` kullanabilirsin. Yeni sayfalar bu yöntemde de DM olarak eklenir; mevcut izinler korunur.
+
 `.env.example` bağlantı alanlarını gösterir. `.env` ve Admin SDK anahtarları Git'e alınmaz. `npm run build` uygulama kabuğunu ve hash isimli public medyayı üretir; özel vault çıktısı `.private-build` içinde kalır. Sayfalar ve medya Firebase'e yerel `firebase:sync` komutuyla aktarılır. İçerik güncellemesi mevcut erişim izinlerini korur.
 
 GitHub Pages workflow'u dört `VITE_FIREBASE_*` repository variable'ını kullanır. Kuralları/indeksleri ayrıca `npx firebase deploy --only firestore` ile yayınla. Firebase Hosting alternatifi de hazır.

@@ -42,6 +42,15 @@ Kendi proje ID'ni seç. Mevcut dosyaların üstüne `firebase init` çalıştır
 
 ## 3. İçerik aktarımı
 
+Firebase CLI ile zaten giriş yaptıysan yönetici JSON dosyası oluşturmadan da aktarabilirsin:
+
+```powershell
+npx firebase login
+npm run firebase:sync:login
+```
+
+Bu alternatif `.env` içindeki `FIREBASE_PROJECT_ID` değerini ve bilgisayarındaki mevcut Firebase CLI oturumunu kullanır. Oturum anahtarlarını dosyaya veya GitHub'a kopyalamaz. Aşağıdaki servis hesabı yöntemi diğer seçenektir; iki yöntemden biri yeterlidir. İçerik güncellemelerinde de seçtiğin yöntemin komutunu kullan.
+
 Project settings → Service accounts → Firebase Admin SDK → Generate new private key. JSON'u depo dışında `C:\secure\inoraxium-service-account.json` gibi bir yere kaydet. `.env` içindeki dosya yolu bunu göstermeli. Anahtar yalnızca yerel aktarım komutunda kullanılır.
 
 ```powershell
