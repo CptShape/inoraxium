@@ -1,0 +1,16 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "pages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visibility", "order": "ASCENDING" },
+        { "fieldPath": "readerUids", "arrayConfig": "CONTAINS" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    { "collectionGroup": "pages", "fieldPath": "page", "indexes": [] },
+    { "collectionGroup": "pages", "fieldPath": "assets", "indexes": [] }
+  ]
+}

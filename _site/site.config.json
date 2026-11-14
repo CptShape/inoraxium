@@ -8,7 +8,12 @@
     "Deadly Sins/Sins/Envy/Satella.md",
     "Godseekers.md"
   ],
-  "exclude": ["images", "_system", "README.md"],
+  "exclude": [
+    "images",
+    "_system",
+    "README.md",
+    "FIREBASE_SETUP.md"
+  ],
   "collections": [
     {
       "id": "mythology",

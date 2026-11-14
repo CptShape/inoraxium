@@ -16,7 +16,7 @@ export const vaultRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../..",
 );
-const output = path.join(vaultRoot, "_site/public/vault");
+const output = path.join(vaultRoot, ".private-build/vault");
 const cache = path.join(vaultRoot, "_site/.image-cache");
 const mediaExt = /\.(png|jpe?g|webp|gif|svg|avif|pdf|mp3|mp4|ogg|wav|webm)$/i;
 const stringLeaves = (value) =>
@@ -103,6 +103,7 @@ export async function buildVault() {
   ];
   const resolve = createResolver(publishedFiles, pages);
   const pageMap = new Map(pages.map((page) => [page.id, page]));
+  const pageMedia = new Map(pages.map((page) => [page.id, new Set()]));
   const warnings = [];
   const referencedImages = new Set();
   for (const page of pages) {
@@ -126,8 +127,10 @@ export async function buildVault() {
       const target = resolve(ref.target, page.id);
       if (target && pageMap.has(target) && target !== page.id)
         page.links.push(target);
-      else if (target && mediaExt.test(target)) referencedImages.add(target);
-      else if (!target)
+      else if (target && mediaExt.test(target)) {
+        referencedImages.add(target);
+        pageMedia.get(page.id).add(target);
+      } else if (!target)
         warnings.push({ page: page.id, target: ref.target, kind: "link" });
     }
     const images = page.meta.image || page.meta.images || [];
@@ -153,9 +156,15 @@ export async function buildVault() {
           ),
         });
         referencedImages.add(target);
+        pageMedia.get(page.id).add(target);
       } else warnings.push({ page: page.id, target: ref, kind: "image" });
     }
     page.links = [...new Set(page.links)];
+    for (const match of page.body.matchAll(/\bsrc\s*=\s*["']([^"']+)["']/gi)) {
+      const target = resolve(match[1], page.id);
+      if (target && mediaExt.test(target)) pageMedia.get(page.id).add(target);
+    }
+    page.mediaFiles = [...pageMedia.get(page.id)];
   }
   for (const page of pages)
     for (const target of page.links)

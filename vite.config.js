@@ -1,41 +1,51 @@
 import { defineConfig } from "vite";
-import { buildVault, vaultRoot } from "./_site/scripts/vault.mjs";
-import path from "node:path";
-
+import fs from "node:fs/promises";
+async function shell() {
+  const c = JSON.parse(await fs.readFile("_site/site.config.json", "utf8"));
+  return JSON.stringify({
+    title: c.title,
+    subtitle: c.subtitle,
+    collections: c.collections.map(
+      ({ id, title, prefix, icon, description }) => ({
+        id,
+        title,
+        prefix,
+        icon,
+        description,
+      }),
+    ),
+  });
+}
 export default defineConfig({
   root: "_site",
   base: "./",
+  publicDir: false,
+  envDir: "..",
+  server: {
+    fs: {
+      deny: [
+        "**/.private-build/**",
+        "**/.env*",
+        "**/*service-account*.json",
+        "**/public/vault/**",
+      ],
+    },
+  },
   build: { outDir: "../dist", emptyOutDir: true },
   plugins: [
     {
-      name: "inoraxium-vault",
-      async buildStart() {
-        await buildVault();
+      name: "public-shell-only",
+      async generateBundle() {
+        this.emitFile({
+          type: "asset",
+          fileName: "shell.json",
+          source: await shell(),
+        });
       },
       configureServer(server) {
-        server.watcher.add(vaultRoot);
-        let timer;
-        let queue = Promise.resolve();
-        server.watcher.on("all", (event, file) => {
-          const relative = path.relative(vaultRoot, file).replaceAll("\\", "/");
-          if (
-            relative.startsWith(".") ||
-            relative.startsWith("_") ||
-            relative.startsWith("node_modules/") ||
-            relative.startsWith("dist/") ||
-            !/\.(md|canvas|png|jpg|jpeg|webp|gif|svg|avif|pdf|mp3|mp4|ogg|wav)$/i.test(
-              relative,
-            )
-          )
-            return;
-          if (!["add", "change", "unlink"].includes(event)) return;
-          clearTimeout(timer);
-          timer = setTimeout(() => {
-            queue = queue
-              .then(buildVault)
-              .then(() => server.ws.send({ type: "full-reload" }))
-              .catch((error) => server.config.logger.error(error.message));
-          }, 350);
+        server.middlewares.use("/shell.json", async (req, res) => {
+          res.setHeader("Content-Type", "application/json");
+          res.end(await shell());
         });
       },
     },

@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function dm() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/roles/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/roles/$(request.auth.uid)).data.dm == true;
+    }
+    match /page-media/{pageKey}/{file} {
+      allow get: if firestore.exists(/databases/(default)/documents/pages/$(pageKey))
+        && (dm() || firestore.get(/databases/(default)/documents/pages/$(pageKey)).data.visibility == 'public'
+          || (request.auth != null
+            && firestore.get(/databases/(default)/documents/pages/$(pageKey)).data.visibility == 'users'
+            && request.auth.uid in firestore.get(/databases/(default)/documents/pages/$(pageKey)).data.readerUids));
+      allow list, write: if false;
+    }
+  }
+}

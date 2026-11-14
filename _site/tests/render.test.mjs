@@ -58,6 +58,11 @@ const data = {
   },
 };
 const md = createMarkdown(data);
+test('authenticated blob image URLs survive sanitization without allowing scripts', () => {
+  const protectedData = {...data, assets: {'images/portrait.png': {src:'blob:https://example.com/authorized',thumb:'blob:https://example.com/thumb'}}};
+  const html = createMarkdown(protectedData).render('![[portrait.png]]', 'Gods/Zeus.md').html;
+  assert.ok(html.includes('src="blob:https://example.com/authorized"'));
+});
 
 test("wiki aliases and heading links keep Pages-safe URLs", () => {
   const { html } = md.render(
@@ -232,7 +237,7 @@ test("canvas renders cards, groups, escaped labels and directed edges with worki
 test("every generated real page renders, every declared asset exists, and all resolved graph edges are reciprocal", async (t) => {
   const manifestFile = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
-    "../public/vault/index.json",
+    "../../.private-build/vault/index.json",
   );
   let manifest;
   try {

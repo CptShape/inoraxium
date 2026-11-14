@@ -58,6 +58,14 @@ import {
 } from "./markdown.js";
 import { mountBoard } from "./canvas.js";
 import "./style.css";
+import {
+  access,
+  connectAccess,
+  login,
+  logout,
+  registeredUsers,
+  saveAccess,
+} from "./access.js";
 
 const iconSet = {
   Search,
@@ -207,14 +215,10 @@ function home() {
   const features = data.config.featured
     .map((id) => pages.get(id))
     .filter(Boolean);
-  const fallbackCovers = [
-    "Mythology/Gods/Olympus/Primordial Gods/Hades.md",
-    null,
-    "Mythology/Gods/Titans/Kronos.md",
-  ];
+  const fallbackCovers = [];
   const visited = recent.filter((id) => pages.has(id)).slice(0, 4);
   document.querySelector("#main").innerHTML =
-    `<div class="home-view"><section class="hero"><img class="hero-image" src="${e(pageImage(hero, false) || "")}" alt="" fetchpriority="high"><div class="hero-vignette"></div><div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div><div class="hero-content"><div class="eyebrow"><span class="tiny-star">✧</span> BİR EVREN. SAYISIZ HİKÂYE.</div><h1>Tanrılar düşer.<br><em>Hikâyeler kalır.</em></h1><p>Kadim güçlerin, unutulmuş diyarların ve birbirine bağlanan kaderlerin izini sür. Inoraxium'un hikâyesi burada başlıyor.</p><div class="hero-actions"><a class="button-primary" href="#/archive">Atlası keşfet ${i("arrow-right")}</a><a class="hero-secondary" href="#/graph">${i("network")}Bağları gör</a></div></div><a class="hero-caption" href="${pageUrl(hero?.id || "")}"><span>OLİMPOS / İLK TANRILAR</span><strong>Zeus</strong><small>Göklerin ardındaki hükümdar ${i("arrow-up-right")}</small></a><span class="hero-coordinate">I · XXXVII · INFINITY</span></section><section class="stat-strip" aria-label="Atlas istatistikleri"><div>${i("book-open")}<strong>${data.stats.pages}</strong><span>arşiv sayfası</span></div><div>${i("network")}<strong>${data.stats.links}</strong><span>hikâyeler arası bağ</span></div><div>${i("image")}<strong>${data.stats.images}</strong><span>evrenden görüntü</span></div><span class="stat-note">BÜTÜN HİKÂYELER BİRBİRİNE BAĞLIDIR <span>✧</span></span></section><section class="home-section"><div class="section-heading"><div><div class="eyebrow">KEŞFE BAŞLA</div><h2>Atlasın sayfaları arasında</h2></div><a class="text-link" href="#/archive">Tüm sayfalar ${i("arrow-up-right")}</a></div><div class="feature-grid">${features.map((page, index) => card(page, `0${index + 1}`, fallbackCovers[index] ? pageImage(pages.get(fallbackCovers[index])) : null)).join("")}</div></section><section class="home-section collections-section"><div class="section-heading"><div><div class="eyebrow">EVRENİN KATMANLARI</div><h2>Bir yol seç.</h2></div><span class="section-note">Her kapı başka bir hikâyeye açılır.</span></div><div class="collection-grid">${data.config.collections.map((c, index) => `<a href="#/collection/${c.id}" class="collection-tile"><span class="collection-number">0${index + 1}</span>${i(c.icon)}<h3>${e(c.title)}</h3><p>${e(c.description)}</p><div><span>${data.pages.filter((p) => p.collection === c.id).length} sayfa</span>${i("arrow-up-right")}</div></a>`).join("")}</div></section><section class="quote-band"><span>✧</span><blockquote>“Our God prayed. And for the first time,<br>we wondered who could possibly answer him.”</blockquote><a href="${pageUrl("Godseekers.md")}">GODSEEKERS ${i("arrow-up-right")}</a></section>${
+    `<div class="home-view"><section class="hero"><img class="hero-image" src="${e(pageImage(hero, false) || "")}" alt="" fetchpriority="high"><div class="hero-vignette"></div><div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div><div class="hero-content"><div class="eyebrow"><span class="tiny-star">✧</span> BİR EVREN. SAYISIZ HİKÂYE.</div><h1>Tanrılar düşer.<br><em>Hikâyeler kalır.</em></h1><p>Kadim güçlerin, unutulmuş diyarların ve birbirine bağlanan kaderlerin izini sür. Inoraxium'un hikâyesi burada başlıyor.</p><div class="hero-actions"><a class="button-primary" href="#/archive">Atlası keşfet ${i("arrow-right")}</a><a class="hero-secondary" href="#/graph">${i("network")}Bağları gör</a></div></div><a class="hero-caption" href="${pageUrl(hero?.id || "")}"><span>ÖNE ÇIKAN SAYFA</span><strong>${e(hero?.title || "Atlas")}</strong><small>Hikâyeyi keşfet ${i("arrow-up-right")}</small></a><span class="hero-coordinate">I · XXXVII · INFINITY</span></section><section class="stat-strip" aria-label="Atlas istatistikleri"><div>${i("book-open")}<strong>${data.stats.pages}</strong><span>arşiv sayfası</span></div><div>${i("network")}<strong>${data.stats.links}</strong><span>hikâyeler arası bağ</span></div><div>${i("image")}<strong>${data.stats.images}</strong><span>evrenden görüntü</span></div><span class="stat-note">BÜTÜN HİKÂYELER BİRBİRİNE BAĞLIDIR <span>✧</span></span></section><section class="home-section"><div class="section-heading"><div><div class="eyebrow">KEŞFE BAŞLA</div><h2>Atlasın sayfaları arasında</h2></div><a class="text-link" href="#/archive">Tüm sayfalar ${i("arrow-up-right")}</a></div><div class="feature-grid">${features.map((page, index) => card(page, `0${index + 1}`, fallbackCovers[index] ? pageImage(pages.get(fallbackCovers[index])) : null)).join("")}</div></section><section class="home-section collections-section"><div class="section-heading"><div><div class="eyebrow">EVRENİN KATMANLARI</div><h2>Bir yol seç.</h2></div><span class="section-note">Her kapı başka bir hikâyeye açılır.</span></div><div class="collection-grid">${data.config.collections.map((c, index) => `<a href="#/collection/${c.id}" class="collection-tile"><span class="collection-number">0${index + 1}</span>${i(c.icon)}<h3>${e(c.title)}</h3><p>${e(c.description)}</p><div><span>${data.pages.filter((p) => p.collection === c.id).length} sayfa</span>${i("arrow-up-right")}</div></a>`).join("")}</div></section>${
       visited.length
         ? `<section class="home-section"><div class="section-heading"><div><div class="eyebrow">YOLCULUĞUNA DEVAM ET</div><h2>Son ziyaret edilenler</h2></div></div><div class="recent-list">${visited
             .map((id) => {
@@ -357,7 +361,7 @@ function pageView() {
     .filter(Boolean);
   const saved = bookmarks.includes(page.id);
   document.querySelector("#main").innerHTML =
-    `<div class="reader-view ${page.type === "canvas" ? "canvas-reader" : ""}"><div class="page-breadcrumb"><a href="#/archive">Arşiv</a>${i("chevron-right")}${c ? `<a href="#/collection/${c.id}">${e(c.title)}</a>${i("chevron-right")}` : ""}<span>${e(page.title)}</span></div><header class="page-header"><div class="eyebrow">${e(c?.title || (page.type === "canvas" ? "CANVAS PANOSU" : "EVREN NOTLARI"))}</div><div class="page-heading-line"><h1>${e(page.title)}</h1><div class="page-actions"><button class="icon-button ${saved ? "saved" : ""}" data-action="bookmark" data-id="${e(page.id)}" aria-label="${saved ? "Kaydedilenlerden çıkar" : "Sayfayı kaydet"}" aria-pressed="${saved}">${i("bookmark")}</button><button class="icon-button" data-action="copy" aria-label="Sayfanın bağlantısını kopyala">${i("link")}</button><a class="icon-button" href="#/graph?root=${encodeURIComponent(page.id)}" aria-label="Sayfanın bağlantı haritası">${i("network")}</a></div></div><div class="page-meta"><span>${i(page.type === "canvas" ? "layers" : "book-open")}${page.type === "canvas" ? `${page.canvas.nodes?.length || 0} kart` : `${Math.max(1, Math.ceil(page.words / 200))} dk okuma`}</span><span>${i("network")}${related.length} bağlantılı sayfa</span>${page.tags.length ? `<div class="page-tags">${tagHtml(page.tags)}</div>` : ""}</div></header>${
+    `<div class="reader-view ${page.type === "canvas" ? "canvas-reader" : ""}"><div class="page-breadcrumb"><a href="#/archive">Arşiv</a>${i("chevron-right")}${c ? `<a href="#/collection/${c.id}">${e(c.title)}</a>${i("chevron-right")}` : ""}<span>${e(page.title)}</span></div><header class="page-header"><div class="eyebrow">${e(c?.title || (page.type === "canvas" ? "CANVAS PANOSU" : "EVREN NOTLARI"))}</div><div class="page-heading-line"><h1>${e(page.title)}</h1><div class="page-actions">${access.dm ? `<button class="button-primary" data-action="permissions" data-id="${e(page.id)}">Erişim: ${e(page.access.visibility === "dm" ? "DM" : page.access.visibility === "public" ? "Public" : "Kullanıcılar")}</button>` : ""}<button class="icon-button ${saved ? "saved" : ""}" data-action="bookmark" data-id="${e(page.id)}" aria-label="${saved ? "Kaydedilenlerden çıkar" : "Sayfayı kaydet"}" aria-pressed="${saved}">${i("bookmark")}</button><button class="icon-button" data-action="copy" aria-label="Sayfanın bağlantısını kopyala">${i("link")}</button><a class="icon-button" href="#/graph?root=${encodeURIComponent(page.id)}" aria-label="Sayfanın bağlantı haritası">${i("network")}</a></div></div><div class="page-meta"><span>${i(page.type === "canvas" ? "layers" : "book-open")}${page.type === "canvas" ? `${page.canvas.nodes?.length || 0} kart` : `${Math.max(1, Math.ceil(page.words / 200))} dk okuma`}</span><span>${i("network")}${related.length} bağlantılı sayfa</span>${page.tags.length ? `<div class="page-tags">${tagHtml(page.tags)}</div>` : ""}</div></header>${
       page.type === "canvas"
         ? '<div id="board" class="board-container"></div>'
         : `<div class="reader-layout"><div class="article-column">${infobox(page)}<article class="prose" id="article">${page.body.trim() ? rendered.html : `<div class="unwritten">${i("scroll-text")}<h2>Bu hikâye henüz yazılmadı.</h2><p>Bu sayfa Inoraxium arşivinde yerini aldı. Satırları zamanla dolacak.</p></div>`}</article><div class="article-end"><span></span>✧<span></span></div></div><aside class="reader-rail"><div class="rail-sticky">${rendered.headings.length ? `<div class="rail-label">BU SAYFADA</div><nav class="toc" aria-label="İçindekiler">${rendered.headings.map((h) => `<a class="depth-${h.depth}" href="${pageUrl(page.id, h.id)}" data-heading="${e(h.id)}">${e(h.text)}</a>`).join("")}</nav>` : ""}<div class="rail-label backlinks-label">BURAYA BAĞLANANLAR <span>${page.backlinks.length}</span></div><nav class="backlink-list">${
@@ -525,7 +529,15 @@ function navigate() {
   document.body.classList.remove("menu-open");
   document.title = "Inoraxium — Evrenin Atlası";
   shell();
-  if (next.view === "home") home();
+  const bar = document.querySelector(".topbar-actions");
+  bar.insertAdjacentHTML(
+    "afterbegin",
+    `<span class="auth-label">${access.user ? e(access.user.displayName || access.user.email) + (access.dm ? " · DM" : "") : ""}</span><button class="auth-button" data-action="${access.user ? "logout" : "login"}" ${!access.configured ? "disabled" : ""}>${access.user ? "Çıkış yap" : "Google ile giriş"}</button>`,
+  );
+  if (access.loading || access.error || !data.pages.length) {
+    document.querySelector("#main").innerHTML =
+      `<div class="empty-state"><h1>${access.loading ? "Atlas yükleniyor…" : access.error ? "Bağlantı kurulamadı" : "Henüz görüntüleyebileceğin bir sayfa yok."}</h1><p>${access.error ? "Firebase bağlantısını kontrol edip sayfayı yenile. Kod: " + e(access.error) : !access.configured ? "Firebase bağlantısı henüz yapılandırılmadı." : access.loading ? "Erişim izinleri kontrol ediliyor." : "DM tarafından sana açılan veya Public olarak paylaşılan sayfalar burada görünecek."}</p></div>`;
+  } else if (next.view === "home") home();
   else if (next.view === "page") pageView();
   else if (
     ["archive", "collection", "tag", "canvases", "bookmarks"].includes(
@@ -685,6 +697,11 @@ document.addEventListener("click", async (event) => {
       return;
     }
   }
+  if (event.target.closest(".missing-link")) {
+    event.preventDefault();
+    notify("Bu sayfa mevcut değil veya görüntüleme iznin yok.");
+    return;
+  }
   const button = event.target.closest("[data-action]");
   if (!button) {
     const spoiler = event.target.closest(".spoiler");
@@ -705,6 +722,19 @@ document.addEventListener("click", async (event) => {
     return;
   }
   const action = button.dataset.action;
+  if (action === "login" || action === "logout") {
+    try {
+      if (action === "login") await login();
+      else await logout();
+    } catch (error) {
+      notify("Giriş işlemi tamamlanamadı: " + error.code);
+    }
+    return;
+  }
+  if (action === "permissions") {
+    await permissionDialog(pages.get(button.dataset.id));
+    return;
+  }
   if (action === "search") openSearch();
   else if (action === "menu") document.body.classList.toggle("menu-open");
   else if (action === "close-menu") document.body.classList.remove("menu-open");
@@ -803,17 +833,61 @@ window.addEventListener(
   { passive: true },
 );
 
+async function permissionDialog(page) {
+  if (!access.dm || !page) return;
+  try {
+    const users = await registeredUsers();
+    if (!access.dm) return;
+    const dialog = openDialog(
+      `<form class="permission-form"><div class="eyebrow">DM · SAYFA ERİŞİMİ</div><h2>${e(page.title)}</h2><label>Görünürlük<select name="visibility"><option value="dm">DM — Yalnızca DM</option><option value="public">Public — Herkes</option><option value="users">Seçili kullanıcılar ve DM</option></select></label><fieldset><legend>Kayıtlı kullanıcılar</legend>${users.map((user) => `<label class="user-choice"><input type="checkbox" name="reader" value="${e(user.uid)}" ${page.access.readerUids.includes(user.uid) ? "checked" : ""}><span>${e(user.displayName)}<small>${e(user.email)}</small></span></label>`).join("") || "<p>Oyuncular ilk Google girişlerinden sonra burada görünür.</p>"}</fieldset><p>Yeni sayfalar daima DM olarak eklenir. Gömmeler, bağlı sayfalara erişim vermez.</p><div role="status" class="permission-status"></div><div class="permission-actions"><button type="button" data-close>Vazgeç</button><button type="submit" class="button-primary">Kaydet</button></div></form>`,
+      "permission-dialog",
+    );
+    const form = dialog.querySelector("form"),
+      select = form.elements.visibility,
+      fieldset = form.querySelector("fieldset");
+    select.value = page.access.visibility;
+    const refresh = () => {
+      fieldset.disabled = select.value !== "users";
+    };
+    select.addEventListener("change", refresh);
+    refresh();
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submit = form.querySelector("[type=submit]");
+      submit.disabled = true;
+      try {
+        await saveAccess(
+          page.access.key,
+          select.value,
+          [...form.querySelectorAll("[name=reader]:checked")].map(
+            (el) => el.value,
+          ),
+        );
+        closeDialog();
+        notify("Erişim ayarları güncellendi.");
+      } catch (error) {
+        form.querySelector(".permission-status").textContent =
+          "Kaydedilemedi: " + error.code;
+        submit.disabled = false;
+      }
+    });
+  } catch (error) {
+    notify("Kullanıcı listesi alınamadı: " + error.code);
+  }
+}
 try {
-  const response = await fetch(`${import.meta.env.BASE_URL}vault/index.json`);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  data = await response.json();
-  pages = new Map(data.pages.map((page) => [page.id, page]));
-  markdown = createMarkdown(data);
-  navigate();
+  const response = await fetch(`${import.meta.env.BASE_URL}shell.json`);
+  if (!response.ok) throw new Error("Shell could not be loaded");
+  const config = await response.json();
+  connectAccess(config, (atlas) => {
+    data = atlas;
+    pages = new Map(data.pages.map((page) => [page.id, page]));
+    markdown = createMarkdown(data);
+    current = null;
+    navigate();
+  });
 } catch (error) {
   console.error(error);
-  app.innerHTML = `<div class="boot error"><h1>Atlas açılamadı.</h1><p>İçerik dosyasına ulaşılamadı. Sayfayı yeniden yükleyerek tekrar dene.</p><button class="button-primary" id="reload">Yeniden dene</button></div>`;
-  document
-    .querySelector("#reload")
-    .addEventListener("click", () => location.reload());
+  app.innerHTML =
+    '<div class="boot error"><h1>Atlas açılamadı.</h1><p>Sayfayı yenileyerek tekrar dene.</p></div>';
 }

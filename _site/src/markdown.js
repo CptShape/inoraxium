@@ -176,6 +176,8 @@ export function createMarkdown(data) {
     });
     const html = DOMPurify.sanitize(marked.parse(String(source)), {
       ADD_TAGS: ["video", "audio"],
+      ALLOWED_URI_REGEXP:
+        /^(?:(?:https?|mailto|blob):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
       ADD_ATTR: ["controls", "preload", "target"],
       FORBID_TAGS: ["iframe", "form", "input", "script", "style"],
       FORBID_ATTR: ["srcdoc"],
@@ -187,7 +189,7 @@ export function createMarkdown(data) {
       "img[src],video[src],audio[src],source[src]",
     )) {
       const src = element.getAttribute("src");
-      if (!src.startsWith("vault/media/")) {
+      if (!(src.startsWith("vault/media/") || src.startsWith("blob:"))) {
         const resolved = asset(src, from);
         if (resolved) element.setAttribute("src", resolved);
       }

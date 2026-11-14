@@ -1,5 +1,12 @@
 # Build and dependencies
 node_modules/
+.private-build/
+*service-account*.json
+firebase-admin*.json
+*-firebase-adminsdk-*.json
+firestore-debug.log
+storage-debug.log
+ui-debug.log
 dist/
 _site/public/vault/
 _site/.image-cache/
