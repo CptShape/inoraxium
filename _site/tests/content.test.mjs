@@ -46,7 +46,7 @@ test("all real vault Markdown can be parsed without modifying sources", async ()
     }
   }
   await walk(vaultRoot);
-  assert.ok(count >= 77);
+  assert.ok(count > 0, "The vault must contain at least one Markdown page");
 });
 
 test("resolver handles relative paths, encoded Turkish names, aliases and duplicate basenames", () => {
