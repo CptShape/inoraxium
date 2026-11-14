@@ -1,0 +1,32 @@
+{
+  "name": "inoraxium-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Inoraxium evreninin salt okunur dijital atlası",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test _site/tests/*.test.mjs",
+    "audit:links": "node _site/scripts/audit.mjs"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.2.0",
+    "@fontsource/manrope": "^5.2.0",
+    "dompurify": "^3.2.6",
+    "github-slugger": "^2.0.0",
+    "lucide": "^0.468.0",
+    "marked": "^16.0.0",
+    "marked-footnote": "^1.4.0",
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "jsdom": "^27.4.0",
+    "sharp": "^0.35.5",
+    "vite": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

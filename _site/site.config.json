@@ -1,0 +1,46 @@
+{
+  "title": "Inoraxium",
+  "subtitle": "EVRENİN ATLASI",
+  "description": "Tanrılar düşer. Hikâyeler kalır.",
+  "heroPage": "Mythology/Gods/Olympus/Primordial Gods/Zeus.md",
+  "featured": [
+    "Mythology/Mythology.md",
+    "Deadly Sins/Sins/Envy/Satella.md",
+    "Godseekers.md"
+  ],
+  "exclude": ["images", "_system", "README.md"],
+  "collections": [
+    {
+      "id": "mythology",
+      "title": "Mitoloji",
+      "prefix": "Mythology/",
+      "icon": "orbit",
+      "description": "Yaratılışın ardındaki güçler ve kadim tanrılar.",
+      "cover": "Mythology/Gods/Olympus/Primordial Gods/Hades.md"
+    },
+    {
+      "id": "sins",
+      "title": "Günahlar & Cadılar",
+      "prefix": "Deadly Sins/",
+      "icon": "flame",
+      "description": "Ölümcül arzular, mühürler ve onların taşıyıcıları.",
+      "cover": "Deadly Sins/Sins/Envy/Satella.md"
+    },
+    {
+      "id": "nations",
+      "title": "Diyarlar",
+      "prefix": "Nations/",
+      "icon": "castle",
+      "description": "Sınırlar, krallıklar ve henüz anlatılmamış hikâyeler.",
+      "cover": "Mythology/Gods/Titans/Gaia.md"
+    },
+    {
+      "id": "arcs",
+      "title": "Hikâye Örgüleri",
+      "prefix": "Arc/",
+      "icon": "scroll-text",
+      "description": "Kaderlerin kesiştiği yerde başlayan yolculuklar.",
+      "cover": "Mythology/Gods/Titans/Nyx.md"
+    }
+  ]
+}

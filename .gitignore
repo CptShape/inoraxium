@@ -1,0 +1,31 @@
+# Build and dependencies
+node_modules/
+dist/
+_site/public/vault/
+_site/.image-cache/
+playwright-report/
+test-results/
+
+# Local settings, credentials and OS files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.log
+
+# Chronicler regenerates these; content and vault settings are tracked
+.chronicler-cache/
+.chronicler/
+*.bak
+*.tmp
+~$*
+
+# Image-generation provenance contains workstation paths, not site content
+images/**/generation-manifest.json
+images/**/redesign*.json
