@@ -17,14 +17,13 @@ import {
   onSnapshot,
   getDocs,
 } from "firebase/firestore";
-import { getStorage, ref, getBlob } from "firebase/storage";
+import { publicAssets } from "../lib/public-media.mjs";
 import { visibleAtlas } from "./access-data.js";
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 export const access = {
@@ -36,16 +35,12 @@ export const access = {
 };
 let auth,
   db,
-  storage,
   generation = 0,
   roleStop,
-  pageStops = [],
-  urls = [];
+  pageStops = [];
 function release() {
   pageStops.forEach((stop) => stop());
   pageStops = [];
-  urls.forEach((url) => URL.revokeObjectURL(url));
-  urls = [];
 }
 export function connectAccess(shell, receive) {
   const empty = () => receive(visibleAtlas(shell, []));
@@ -57,7 +52,6 @@ export function connectAccess(shell, receive) {
   const app = initializeApp(config);
   auth = getAuth(app);
   db = getFirestore(app);
-  storage = getStorage(app);
   function subscribe() {
     const scope = ++generation;
     release();
@@ -65,7 +59,6 @@ export function connectAccess(shell, receive) {
     access.error = "";
     empty();
     const buckets = new Map();
-    let hydrate = 0;
     const targets = access.dm
       ? [collection(db, "pages")]
       : [
@@ -85,7 +78,6 @@ export function connectAccess(shell, receive) {
       if (scope !== generation) return;
       access.error = error.code || error.message;
       access.loading = false;
-      ++hydrate;
       release();
       empty();
     };
@@ -93,60 +85,25 @@ export function connectAccess(shell, receive) {
       pageStops.push(
         onSnapshot(
           target,
-          async (snapshot) => {
+          (snapshot) => {
+            if (scope !== generation) return;
             buckets.set(
               index,
               snapshot.docs.map((d) => ({ ...d.data(), key: d.id })),
             );
             ready.add(index);
-            // Immediately discard stale content, URLs and search results on ACL changes.
+            // Immediately discard stale content and search results on ACL changes.
             access.loading = true;
             empty();
             if (ready.size !== targets.length) return;
-            const run = ++hydrate;
             const docs = [
               ...new Map(
                 [...buckets.values()].flat().map((d) => [d.key, d]),
               ).values(),
             ];
-            const assets = {};
-            const created = [];
-            const entries = [
-              ...new Map(
-                docs.flatMap((d) => Object.entries(d.assets || {})),
-              ).entries(),
-            ];
-            try {
-              let cursor = 0;
-              await Promise.all(
-                Array.from(
-                  { length: Math.min(6, entries.length) },
-                  async () => {
-                    while (cursor < entries.length) {
-                      const [file, paths] = entries[cursor++];
-                      const pair = {};
-                      for (const key of ["src", "thumb"]) {
-                        const blob = await getBlob(ref(storage, paths[key]));
-                        pair[key] = URL.createObjectURL(blob);
-                        created.push(pair[key]);
-                      }
-                      assets[file] = pair;
-                    }
-                  },
-                ),
-              );
-              if (scope !== generation || run !== hydrate) {
-                created.forEach((url) => URL.revokeObjectURL(url));
-                return;
-              }
-              urls.forEach((url) => URL.revokeObjectURL(url));
-              urls = created;
-              access.loading = false;
-              receive(visibleAtlas(shell, docs, assets));
-            } catch (error) {
-              created.forEach((url) => URL.revokeObjectURL(url));
-              if (scope === generation && run === hydrate) fail(error);
-            }
+            if (scope !== generation) return;
+            access.loading = false;
+            receive(visibleAtlas(shell, docs, publicAssets(docs)));
           },
           fail,
         ),

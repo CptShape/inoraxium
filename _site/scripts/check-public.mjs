@@ -6,6 +6,14 @@ async function scan(dir) {
     const name = path.join(dir, entry.name);
     if (entry.isDirectory()) await scan(name);
     else {
+      const relative = path.relative("dist", name).replaceAll("\\", "/");
+      if (relative.startsWith("media/")) {
+        assert.match(
+          relative,
+          /^media\/[a-f0-9]{32}(?:-thumb)?\.(webp|gif|svg|avif|png|jpg|jpeg|pdf|mp3|mp4|ogg|wav|webm)$/,
+        );
+        continue;
+      }
       assert.ok(
         !/\.(md|canvas|png|jpe?g|webp|pdf)$/i.test(name),
         `Private file in build: ${name}`,
@@ -18,5 +26,5 @@ async function scan(dir) {
 }
 await scan("dist");
 console.log(
-  "Public build contains only the application shell; no vault pages or media.",
+  "Public build contains the application shell and unlisted public media; no vault page documents.",
 );

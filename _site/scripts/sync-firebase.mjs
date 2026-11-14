@@ -1,22 +1,16 @@
 import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { getStorage } from "firebase-admin/storage";
-import path from "node:path";
+import { publicMediaPaths } from "../lib/public-media.mjs";
 import { createHash } from "node:crypto";
-import { buildVault, vaultRoot } from "./vault.mjs";
-const projectId = process.env.FIREBASE_PROJECT_ID,
-  bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-if (!projectId || !bucketName)
-  throw new Error(
-    "FIREBASE_PROJECT_ID and FIREBASE_STORAGE_BUCKET are required. See FIREBASE_SETUP.md.",
-  );
+import { buildVault } from "./vault.mjs";
+const projectId = process.env.FIREBASE_PROJECT_ID;
+if (!projectId)
+  throw new Error("FIREBASE_PROJECT_ID is required. See FIREBASE_SETUP.md.");
 initializeApp({
   credential: applicationDefault(),
   projectId,
-  storageBucket: bucketName,
 });
-const db = getFirestore(),
-  bucket = getStorage().bucket();
+const db = getFirestore();
 const vault = await buildVault(),
   present = new Set();
 for (const original of vault.pages) {
@@ -27,20 +21,7 @@ for (const original of vault.pages) {
   for (const file of page.mediaFiles) {
     const source = vault.assets[file];
     if (!source) continue;
-    const pair = {};
-    for (const kind of ["src", "thumb"]) {
-      const filename = path.basename(source[kind]),
-        destination = `page-media/${key}/${filename}`;
-      const local = path.join(vaultRoot, ".private-build", source[kind]);
-      const [exists] = await bucket.file(destination).exists();
-      if (!exists)
-        await bucket.upload(local, {
-          destination,
-          metadata: { cacheControl: "private, no-store", metadata: {} },
-        });
-      pair[kind] = destination;
-    }
-    assets[file] = pair;
+    assets[file] = publicMediaPaths(source);
   }
   const record = { page, assets };
   if (Buffer.byteLength(JSON.stringify(record)) > 900_000)

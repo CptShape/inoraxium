@@ -175,11 +175,10 @@ export async function buildVault() {
   let imageCount = 0;
   for (const file of files.filter((file) => mediaExt.test(file))) {
     const source = path.join(vaultRoot, file);
-    const stat = await fs.stat(source);
     const key = createHash("sha256")
-      .update(`${file}:${stat.size}:${stat.mtimeMs}`)
+      .update(await fs.readFile(source))
       .digest("hex")
-      .slice(0, 16);
+      .slice(0, 32);
     const raster = /\.(png|jpe?g|webp|avif)$/i.test(file);
     const name = `${key}${raster ? ".webp" : path.extname(file).toLowerCase()}`;
     const destination = path.join(output, "media", name);

@@ -271,3 +271,9 @@ test("every generated real page renders, every declared asset exists, and all re
       await readFile(path.resolve(path.dirname(manifestFile), "..", file));
   assert.ok(!manifest.warnings.some((w) => w.kind === "image"));
 });
+
+test("public hash image URLs work in wiki and HTML images", () => {
+ const url = `media/${"c".repeat(32)}.webp`;
+ const renderer = createMarkdown({...data, assets: {"images/portrait.png": {src:url,thumb:url}}});
+ for (const source of ["![[portrait.png]]", '<img src="portrait.png">']) assert.ok(renderer.render(source,"Gods/Zeus.md").html.includes(`src="${url}"`));
+});
