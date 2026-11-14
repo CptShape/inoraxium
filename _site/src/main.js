@@ -58,6 +58,9 @@ import {
 } from "./markdown.js";
 import { mountBoard } from "./canvas.js";
 import "./style.css";
+import "./explorer.css";
+import { mountExplorer } from "./explorer.js";
+import { folderUrl } from "../lib/explorer.mjs";
 import {
   access,
   connectAccess,
@@ -163,28 +166,6 @@ function notify(message) {
   toastTimer = setTimeout(() => el.classList.remove("visible"), 2600);
 }
 
-function treeHtml() {
-  const root = { folders: {}, pages: [] };
-  for (const page of data.pages) {
-    const segments = page.id.split("/");
-    segments.pop();
-    let branch = root;
-    for (const segment of segments)
-      branch = branch.folders[segment] ||= { folders: {}, pages: [] };
-    branch.pages.push(page);
-  }
-  const render = (branch, folder = "") =>
-    `${Object.entries(branch.folders)
-      .map(([name, child]) => {
-        const path = `${folder}${name}/`;
-        return `<details ${current?.id?.startsWith(path) ? "open" : ""}><summary>${i("chevron-right")}${i("folder")}<span>${e(name)}</span></summary><div class="tree-branch">${render(child, path)}</div></details>`;
-      })
-      .join(
-        "",
-      )}${branch.pages.map((page) => `<a class="tree-page ${current?.id === page.id ? "active" : ""}" href="${pageUrl(page.id)}">${i(page.type === "canvas" ? "layers" : "file-text")}<span>${e(page.title)}</span></a>`).join("")}`;
-  return render(root);
-}
-
 function shell() {
   const r = current;
   const active = (name) => (r.view === name ? "active" : "");
@@ -197,12 +178,13 @@ function shell() {
         : {
             home: "Genel bakış",
             archive: "Tüm sayfalar",
+            files: "Dosya gezgini",
             graph: "Bağlantı haritası",
             bookmarks: "Kaydedilenler",
             canvases: "Canvas panoları",
             tag: r.id,
           }[r.view];
-  app.innerHTML = `<aside class="sidebar" aria-label="Ana menü"><a class="brand" href="#/">${sigil}<span>INORAXIUM<small>EVRENİN ATLASI</small></span></a><button class="sidebar-search" data-action="search">${i("search")}<span>Atlas içinde ara</span><kbd>⌘ K</kbd></button><div class="sidebar-scroll"><div class="nav-label">KEŞFET</div><nav class="primary-nav"><a class="${active("home")}" href="#/">${i("compass")}<span>Genel bakış</span></a><a class="${active("archive")}" href="#/archive">${i("library")}<span>Tüm sayfalar</span><small>${data.pages.length}</small></a><a class="${active("graph")}" href="#/graph">${i("network")}<span>Bağlantı haritası</span></a><a class="${active("canvases")}" href="#/canvases">${i("layers")}<span>Canvas panoları</span><small>${data.stats.canvases}</small></a><a class="${active("bookmarks")}" href="#/bookmarks">${i("bookmark")}<span>Kaydedilenler</span><small id="bookmark-count">${bookmarks.filter((id) => pages.has(id)).length}</small></a></nav><div class="nav-label collection-label">KOLEKSİYONLAR<span>04</span></div><nav class="collection-nav">${data.config.collections.map((c) => `<a class="${r.view === "collection" && r.id === c.id ? "active" : ""}" href="#/collection/${c.id}">${i(c.icon)}<span>${e(c.title)}</span><small>${data.pages.filter((p) => p.collection === c.id).length}</small></a>`).join("")}</nav><details class="vault-tree" ${r.view === "page" ? "open" : ""}><summary><span>DOSYA GEZGİNİ</span>${i("chevron-down")}</summary><div class="tree-content">${treeHtml()}</div></details></div><div class="sidebar-footer"><span class="status-dot"></span><div>Hikâyeler yaşamaya devam eder.<small>Inoraxium dijital arşivi</small></div><button class="icon-button" data-action="theme" aria-label="Renk temasını değiştir">${i(document.documentElement.dataset.theme === "light" ? "moon" : "sun")}</button></div></aside><button class="sidebar-scrim" data-action="close-menu" aria-label="Menüyü kapat"></button><div class="workspace"><header class="topbar"><div class="breadcrumbs"><button class="icon-button menu-button" data-action="menu" aria-label="Menüyü aç">${i("menu")}</button><a href="#/">ATLAS</a>${i("chevron-right")}<span>${e(locationLabel || "Sayfa")}</span></div><div class="topbar-actions"><span class="edition">INORAXIUM CHRONICLES</span><button class="icon-button" data-action="random" aria-label="Rastgele sayfa aç" title="Rastgele sayfa">${i("shuffle")}</button><button class="icon-button" data-action="search" aria-label="Ara">${i("search")}</button></div></header><main id="main" tabindex="-1"></main><footer class="site-footer"><a href="#/">INORAXIUM</a><span>Her sayfa, başka bir dünyanın kapısı.</span><a href="#/archive">Atlası keşfet ${i("arrow-up-right")}</a></footer></div>`;
+  app.innerHTML = `<aside class="sidebar" aria-label="Ana menü"><a class="brand" href="#/">${sigil}<span>INORAXIUM<small>EVRENİN ATLASI</small></span></a><button class="sidebar-search" data-action="search">${i("search")}<span>Atlas içinde ara</span><kbd>⌘ K</kbd></button><div class="sidebar-scroll"><div class="nav-label">KEŞFET</div><nav class="primary-nav"><a class="${active("files")}" href="#/files">${i("folder")}<span>Dosya gezgini</span></a><a class="${active("home")}" href="#/">${i("compass")}<span>Genel bakış</span></a><a class="${active("archive")}" href="#/archive">${i("library")}<span>Tüm sayfalar</span><small>${data.pages.length}</small></a><a class="${active("graph")}" href="#/graph">${i("network")}<span>Bağlantı haritası</span></a><a class="${active("canvases")}" href="#/canvases">${i("layers")}<span>Canvas panoları</span><small>${data.stats.canvases}</small></a><a class="${active("bookmarks")}" href="#/bookmarks">${i("bookmark")}<span>Kaydedilenler</span><small id="bookmark-count">${bookmarks.filter((id) => pages.has(id)).length}</small></a></nav><div class="nav-label collection-label">KOLEKSİYONLAR<span>04</span></div><nav class="collection-nav">${data.config.collections.map((c) => `<a class="${r.view === "collection" && r.id === c.id ? "active" : ""}" href="#/collection/${c.id}">${i(c.icon)}<span>${e(c.title)}</span><small>${data.pages.filter((p) => p.collection === c.id).length}</small></a>`).join("")}</nav></div><div class="sidebar-footer"><span class="status-dot"></span><div>Hikâyeler yaşamaya devam eder.<small>Inoraxium dijital arşivi</small></div><button class="icon-button" data-action="theme" aria-label="Renk temasını değiştir">${i(document.documentElement.dataset.theme === "light" ? "moon" : "sun")}</button></div></aside><button class="sidebar-scrim" data-action="close-menu" aria-label="Menüyü kapat"></button><div class="workspace"><header class="topbar"><div class="breadcrumbs"><button class="icon-button menu-button" data-action="menu" aria-label="Menüyü aç">${i("menu")}</button><a href="#/">ATLAS</a>${i("chevron-right")}<span>${e(locationLabel || "Sayfa")}</span></div><div class="topbar-actions"><span class="edition">INORAXIUM CHRONICLES</span><button class="icon-button" data-action="random" aria-label="Rastgele sayfa aç" title="Rastgele sayfa">${i("shuffle")}</button><button class="icon-button" data-action="search" aria-label="Ara">${i("search")}</button></div></header><main id="main" tabindex="-1"></main><footer class="site-footer"><a href="#/">INORAXIUM</a><span>Her sayfa, başka bir dünyanın kapısı.</span><a href="#/archive">Atlası keşfet ${i("arrow-up-right")}</a></footer></div>`;
 }
 
 function card(page, number = "", coverOverride = null) {
@@ -361,7 +343,7 @@ function pageView() {
     .filter(Boolean);
   const saved = bookmarks.includes(page.id);
   document.querySelector("#main").innerHTML =
-    `<div class="reader-view ${page.type === "canvas" ? "canvas-reader" : ""}"><div class="page-breadcrumb"><a href="#/archive">Arşiv</a>${i("chevron-right")}${c ? `<a href="#/collection/${c.id}">${e(c.title)}</a>${i("chevron-right")}` : ""}<span>${e(page.title)}</span></div><header class="page-header"><div class="eyebrow">${e(c?.title || (page.type === "canvas" ? "CANVAS PANOSU" : "EVREN NOTLARI"))}</div><div class="page-heading-line"><h1>${e(page.title)}</h1><div class="page-actions">${access.dm ? `<button class="button-primary" data-action="permissions" data-id="${e(page.id)}">Erişim: ${e(page.access.visibility === "dm" ? "DM" : page.access.visibility === "public" ? "Public" : "Kullanıcılar")}</button>` : ""}<button class="icon-button ${saved ? "saved" : ""}" data-action="bookmark" data-id="${e(page.id)}" aria-label="${saved ? "Kaydedilenlerden çıkar" : "Sayfayı kaydet"}" aria-pressed="${saved}">${i("bookmark")}</button><button class="icon-button" data-action="copy" aria-label="Sayfanın bağlantısını kopyala">${i("link")}</button><a class="icon-button" href="#/graph?root=${encodeURIComponent(page.id)}" aria-label="Sayfanın bağlantı haritası">${i("network")}</a></div></div><div class="page-meta"><span>${i(page.type === "canvas" ? "layers" : "book-open")}${page.type === "canvas" ? `${page.canvas.nodes?.length || 0} kart` : `${Math.max(1, Math.ceil(page.words / 200))} dk okuma`}</span><span>${i("network")}${related.length} bağlantılı sayfa</span>${page.tags.length ? `<div class="page-tags">${tagHtml(page.tags)}</div>` : ""}</div></header>${
+    `<div class="reader-view ${page.type === "canvas" ? "canvas-reader" : ""}"><div class="page-breadcrumb"><a href="#/archive">Arşiv</a>${i("chevron-right")}${c ? `<a href="#/collection/${c.id}">${e(c.title)}</a>${i("chevron-right")}` : ""}<span>${e(page.title)}</span></div><header class="page-header"><div class="eyebrow">${e(c?.title || (page.type === "canvas" ? "CANVAS PANOSU" : "EVREN NOTLARI"))}</div><div class="page-heading-line"><h1>${e(page.title)}</h1><div class="page-actions"><a class="icon-button" href="${folderUrl(page.id.split("/").slice(0, -1).join("/"))}" aria-label="Bulunduğu klasörü aç" title="Bulunduğu klasörü aç">${i("folder")}</a>${access.dm ? `<button class="button-primary" data-action="permissions" data-id="${e(page.id)}">Erişim: ${e(page.access.visibility === "dm" ? "DM" : page.access.visibility === "public" ? "Public" : "Kullanıcılar")}</button>` : ""}<button class="icon-button ${saved ? "saved" : ""}" data-action="bookmark" data-id="${e(page.id)}" aria-label="${saved ? "Kaydedilenlerden çıkar" : "Sayfayı kaydet"}" aria-pressed="${saved}">${i("bookmark")}</button><button class="icon-button" data-action="copy" aria-label="Sayfanın bağlantısını kopyala">${i("link")}</button><a class="icon-button" href="#/graph?root=${encodeURIComponent(page.id)}" aria-label="Sayfanın bağlantı haritası">${i("network")}</a></div></div><div class="page-meta"><span>${i(page.type === "canvas" ? "layers" : "book-open")}${page.type === "canvas" ? `${page.canvas.nodes?.length || 0} kart` : `${Math.max(1, Math.ceil(page.words / 200))} dk okuma`}</span><span>${i("network")}${related.length} bağlantılı sayfa</span>${page.tags.length ? `<div class="page-tags">${tagHtml(page.tags)}</div>` : ""}</div></header>${
       page.type === "canvas"
         ? '<div id="board" class="board-container"></div>'
         : `<div class="reader-layout"><div class="article-column">${infobox(page)}<article class="prose" id="article">${page.body.trim() ? rendered.html : `<div class="unwritten">${i("scroll-text")}<h2>Bu hikâye henüz yazılmadı.</h2><p>Bu sayfa Inoraxium arşivinde yerini aldı. Satırları zamanla dolacak.</p></div>`}</article><div class="article-end"><span></span>✧<span></span></div></div><aside class="reader-rail"><div class="rail-sticky">${rendered.headings.length ? `<div class="rail-label">BU SAYFADA</div><nav class="toc" aria-label="İçindekiler">${rendered.headings.map((h) => `<a class="depth-${h.depth}" href="${pageUrl(page.id, h.id)}" data-heading="${e(h.id)}">${e(h.text)}</a>`).join("")}</nav>` : ""}<div class="rail-label backlinks-label">BURAYA BAĞLANANLAR <span>${page.backlinks.length}</span></div><nav class="backlink-list">${
@@ -539,6 +521,12 @@ function navigate() {
       `<div class="empty-state"><h1>${access.loading ? "Atlas yükleniyor…" : access.error ? "Bağlantı kurulamadı" : "Henüz görüntüleyebileceğin bir sayfa yok."}</h1><p>${access.error ? "Firebase bağlantısını kontrol edip sayfayı yenile. Kod: " + e(access.error) : !access.configured ? "Firebase bağlantısı henüz yapılandırılmadı." : access.loading ? "Erişim izinleri kontrol ediliyor." : "DM tarafından sana açılan veya Public olarak paylaşılan sayfalar burada görünecek."}</p></div>`;
   } else if (next.view === "home") home();
   else if (next.view === "page") pageView();
+  else if (next.view === "files")
+    mountExplorer(document.querySelector("#main"), data.pages, {
+      path: next.id,
+      icon: i,
+      refreshIcons: icons,
+    });
   else if (
     ["archive", "collection", "tag", "canvases", "bookmarks"].includes(
       next.view,
